@@ -156,7 +156,7 @@ export function Heatmap({ grid, days }: { grid: number[][]; days: string[] }) {
         ))}
         <div className="heat-row heat-hours" aria-hidden>
           <span className="heat-day" />
-          {Array.from({ length: 24 }, (_, h) => <span key={h}>{h % 6 === 0 ? h : ""}</span>)}
+          {Array.from({ length: 24 }, (_, h) => <span key={h}>{String(h).padStart(2, "0")}</span>)}
         </div>
       </div>
       <p className="heat-read">

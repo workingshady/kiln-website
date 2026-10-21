@@ -630,3 +630,18 @@ img[data-zoom] { cursor: zoom-in; }
 .livebtn.on { color: var(--lime); border-color: rgba(198, 242, 78, 0.35); }
 .livebtn:hover { color: var(--bone); }
 @media (max-width: 700px) { .livebtn { display: none; } }
+/* full-width heatmap */
+.heat-panel .heat-row { grid-template-columns: 48px repeat(24, minmax(0, 1fr)); gap: 4px; }
+.heat-panel .heat-grid { gap: 4px; }
+.heat-panel .heat-cell { aspect-ratio: auto; height: 34px; border-radius: 4px; transition: transform 0.15s; }
+.heat-panel .heat-cell:hover { transform: scale(1.08); }
+.heat-panel .heat-day { font-size: 13px; color: var(--ash); }
+.heat-panel .heat-hours span { font-size: 11px; text-align: center; }
+.heat-panel .heat-read { font-size: 15px; margin-top: 16px; }
+.heat-panel .heat-legend { font-size: 12px; }
+.heat-panel .heat-legend i { width: 16px; height: 16px; }
+@media (max-width: 900px) {
+  .heat-panel .heat-grid { overflow-x: auto; }
+  .heat-panel .heat-row { grid-template-columns: 40px repeat(24, 22px); min-width: 660px; }
+  .heat-panel .heat-cell { height: 22px; }
+}

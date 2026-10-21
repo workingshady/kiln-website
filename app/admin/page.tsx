@@ -302,13 +302,13 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
             )}
           </div>
 
-          <div className="grid-3">
+          <div className="panel heat-panel">
+            <h2>When visitors come <small>sessions by weekday and hour, {tz}</small></h2>
+            <Heatmap grid={s.heat} days={s.heatDays} />
+          </div>
+          <div className="grid-2">
             <Ranked cur={cur} title="Clicks" rows={s.clicks} unit="visitors" />
             <Ranked cur={cur} title="Last page before download" rows={s.downloadFrom} unit="sessions" />
-            <div className="panel">
-              <h2>When visitors come <small>sessions, {tz}</small></h2>
-              <Heatmap grid={s.heat} days={s.heatDays} />
-            </div>
           </div>
         </section>
 
