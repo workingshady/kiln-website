@@ -22,16 +22,15 @@ const COLS = "created_at,type,path,label,referrer,utm_source,utm_campaign,countr
 const PAGE = 1000; // Supabase's default max rows per request
 const MAX = 200_000;
 
-async function fetchRange(from: Date, to: Date): Promise<Row[]> {
+// The current period has no upper bound, so rows are never lost to clock skew between server and DB.
+async function fetchRange(from: Date, to: Date | null): Promise<Row[]> {
   const client = db();
   if (!client) return [];
   const out: Row[] = [];
   for (let off = 0; off < MAX; off += PAGE) {
-    const { data, error } = await client
-      .from("events")
-      .select(COLS)
-      .gte("created_at", from.toISOString())
-      .lt("created_at", to.toISOString())
+    let q = client.from("events").select(COLS).gte("created_at", from.toISOString());
+    if (to) q = q.lt("created_at", to.toISOString());
+    const { data, error } = await q
       .order("created_at", { ascending: false })
       .range(off, off + PAGE - 1);
     if (error) throw new Error(error.message);
@@ -74,7 +73,7 @@ export async function loadStats(days: number) {
   const now = new Date();
   const from = new Date(now.getTime() - days * 86_400_000);
   const prevFrom = new Date(from.getTime() - days * 86_400_000);
-  const [rows, prev] = await Promise.all([fetchRange(from, now), fetchRange(prevFrom, from)]);
+  const [rows, prev] = await Promise.all([fetchRange(from, null), fetchRange(prevFrom, from)]);
 
   const views = rows.filter((r) => r.type === "pageview");
   const downloads = rows.filter((r) => r.type === "download");
