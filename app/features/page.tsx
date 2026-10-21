@@ -7,9 +7,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/features" },
 };
 
-const GROUPS: { temp: string; color: string; title: string; intro: string; items: [string, string][] }[] = [
+type Shot = { src: string; alt: string };
+const GROUPS: { temp: string; color: string; title: string; intro: string; shot?: Shot; items: [string, string][] }[] = [
   {
     temp: "600 °C", color: "#d9452b", title: "Write", intro: "The editor, and what Kiln accepts.",
+    shot: { src: "/shots/vase-editor.webp", alt: "Kiln editing a raymarched vase shader at the desktop preset" },
     items: [
       ["GLSL dialects", "#version 330+ runs as written. GLSL ES 1.00, #version 300 es, Shadertoy mainImage() and gl-transitions transition() are converted automatically, and error line numbers still match your file."],
       ["Includes", "#include \"file.glsl\" looks in the shader's folder, then the project folder, then your config includes folder."],
@@ -21,6 +23,7 @@ const GROUPS: { temp: string; color: string; title: string; intro: string; items
   },
   {
     temp: "900 °C", color: "#ff8a3d", title: "Shape", intro: "Controls, inputs and time.",
+    shot: { src: "/shots/burn-transition.webp", alt: "A burn transition between two clips in the Transition panel" },
     items: [
       ["Uniform controls", "Found when the shader compiles. // @slider, @color, @toggle and @drag comments become controls, as do gl-transitions // = default comments."],
       ["Uniform modes", "Each uniform can be Manual, Time, Loop 0..1, Keyframes, or follow the first video's playback."],
@@ -34,6 +37,7 @@ const GROUPS: { temp: string; color: string; title: string; intro: string; items
   },
   {
     temp: "1100 °C", color: "#ffc04d", title: "Check", intro: "Making sure it runs where it has to.",
+    shot: { src: "/shots/embers-audio.webp", alt: "The Performance panel: GPU time per pass and a frame-time graph" },
     items: [
       ["Device presets", "Desktop, Android phone and iPhone. Phone presets set 1080×1920, a top-left UV origin and mobile checking."],
       ["Mobile ES check", "On every compile, glslang checks your original source as a phone would, catching things like a missing precision qualifier."],
@@ -44,6 +48,7 @@ const GROUPS: { temp: string; color: string; title: string; intro: string; items
   },
   {
     temp: "1300 °C", color: "#fff0b8", title: "Ship", intro: "Getting pixels out.",
+    shot: { src: "/shots/export.webp", alt: "The Export window listing PNG, PNG sequence, MP4, MOV, GIF and WebP" },
     items: [
       ["Export", "PNG frame or sequence, MP4 (H.264), MOV (ProRes 422 HQ), animated GIF with one optimised palette, animated WebP (lossy or lossless, with alpha). Any size, fps and length."],
       ["Safe writes", "Exports go to a .part file and are renamed only when complete. Existing files are never overwritten without asking."],
@@ -80,6 +85,7 @@ export default function Features() {
               <span className="temp" style={{ "--t": g.color } as React.CSSProperties}><b>{g.temp}</b></span>
               <h2 id={`g-${g.title}`}>{g.title}</h2>
               <p>{g.intro}</p>
+              {g.shot && <img data-zoom className="feat-shot" src={g.shot.src} alt={g.shot.alt} width={1600} height={1055} loading="lazy" />}
             </header>
             <dl className="spec" style={{ gridTemplateColumns: "1fr" }}>
               {g.items.map(([t, d]) => (

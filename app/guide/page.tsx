@@ -44,6 +44,10 @@ export default function Guide() {
 uniform vec3  u_tint;     // @color #FF994D
 uniform bool  u_mirror;   // @toggle
 uniform vec2  u_offset;   // @drag`}</pre>
+          <figure className="shot-wide" style={{ margin: "8px 0 24px" }}>
+            <img data-zoom src="/shots/glaze-controls.webp" alt="The crackle glaze shader: six comment annotations became sliders, colour pickers and a toggle" width={1600} height={1055} loading="lazy" />
+            <figcaption>glaze.frag: six comments, six controls.</figcaption>
+          </figure>
           <p>gl-transitions style <code>{"// = 0.5"}</code> defaults work too. Each uniform has a mode: <strong>Manual</strong>, <strong>Time</strong>, <strong>Loop 0..1</strong>, <strong>Keyframes</strong> or <strong>Video position</strong>. Uniforms → <strong>+ Add uniform</strong> writes the declaration and comment for you.</p>
           <p>For uber-shaders, every <code>#ifndef NAME</code> / <code>#define NAME value</code> pair appears at the top of the panel. Changing it recompiles at once, and variants you&apos;ve already compiled come back instantly.</p>
 
@@ -73,6 +77,9 @@ uniform vec2  u_offset;   // @drag`}</pre>
 
           <h2 id="export">Export</h2>
           <p>Export (<kbd>⌘</kbd>/<kbd>Ctrl</kbd> <kbd>E</kbd>) writes a PNG frame or sequence, MP4, MOV (ProRes 422 HQ), GIF or WebP at any size, fps and length. Each format has a one-click recommendation, such as GIF at 15 fps and 720 px wide. Video formats need ffmpeg; if it&apos;s missing, the Export window offers to install it.</p>
+          <figure className="shot-wide" style={{ margin: "8px 0 24px" }}>
+            <img data-zoom src="/shots/export.webp" alt="The Export window with its six formats" width={1600} height={1055} loading="lazy" />
+          </figure>
           <p><strong>Export → Batch…</strong> renders every shader in a folder into <code>renders/</code>, skipping files that already have a render unless you tick Overwrite.</p>
 
           <h2 id="shortcuts">Shortcuts</h2>

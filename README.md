@@ -38,6 +38,14 @@ The table is in [`supabase/schema.sql`](supabase/schema.sql). Row level security
 
 See [`.env.example`](.env.example). Download buttons point at `DOWNLOAD_URL_*` when set, and at the GitHub releases page otherwise.
 
+## Shaders, screenshots and clips
+
+Everything visual on the site comes out of Kiln itself:
+
+- `shaders/` holds the shaders written for the site (dusk dunes, heat haze, crackle glaze, a raymarched vase, a burn transition, audio-reactive embers). The hero runs Kiln's own `examples/molten.frag` in WebGL.
+- `public/shots/` are captures of the real Kiln window running those shaders.
+- `public/media/` are 540×960 clips rendered by Kiln's exporter (`KILN_EXPORT=clip.mp4 Kiln shader.frag`).
+
 ## Design notes
 
 Colours follow a kiln's firing temperatures (soot, brick, cherry, ember, flame, white heat), section markers are temperatures, the scroll gauge heats from 20 °C to 1300 °C, and the sparks come from the app icon. Fonts are Big Shoulders, IBM Plex Sans and IBM Plex Mono. All motion respects `prefers-reduced-motion`.

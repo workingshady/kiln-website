@@ -2,7 +2,7 @@ import Link from "next/link";
 import { DownloadButton } from "@/components/Download";
 import { Embers } from "@/components/Embers";
 import { ShaderHero } from "@/components/ShaderHero";
-import { BatchDemo, DialectSwap, StoryTour } from "@/components/Story";
+import { BatchDemo, DialectSwap, Shelf, StoryTour } from "@/components/Story";
 
 const FORMATS = [
   ["MP4", "Handing a clip to anyone", "H.264, any size and fps, with the audio track if you used one"],
@@ -111,7 +111,7 @@ export default function Home() {
             {[
               ["#d9452b", "your code", "GLSL", "Any dialect, exactly as you wrote it."],
               ["#ff8a3d", "glslang", "ES check", "Missing precision and other phone-only errors, on every compile."],
-              ["#ffc04d", "SPIR-V", "Cross-compile", "Your shader is compiled to SPIR-V once."],
+              ["#ffc04d", "SPIR‑V", "Cross-compile", "Your shader is compiled to SPIR‑V once."],
               ["#fff0b8", "SPIRV-Cross", "Metal", "MSL for iOS or macOS, checked with Xcode's metal compiler."],
             ].map(([t, deg, h, p]) => (
               <div key={h} className="stage" style={{ "--t": t } as React.CSSProperties}>
@@ -122,8 +122,8 @@ export default function Home() {
             ))}
           </div>
           <figure className="shot-wide" data-reveal>
-            <img src="/shots/04-metal.png" alt="The Mobile / Metal panel showing a shader converted to Metal Shading Language" width={1600} height={960} loading="lazy" />
-            <figcaption>Mobile / Metal panel: the ES check result, and the generated MSL next to your GLSL.</figcaption>
+            <img data-zoom src="/shots/metal.webp" alt="The Mobile / Metal panel: the heat haze effect passes the GLSL ES check and is converted to Metal Shading Language" width={1600} height={1055} loading="lazy" />
+            <figcaption>The heat haze effect: &ldquo;Passes GLSL ES 1.00 validation&rdquo;, then Convert to MSL for iOS.</figcaption>
           </figure>
         </div>
       </section>
@@ -141,8 +141,8 @@ export default function Home() {
           </div>
           <div className="ship">
             <figure className="phone" data-reveal>
-              <video src="/media/molten.mp4" poster="/media/molten.jpg" autoPlay muted loop playsInline aria-label="A 540×960 MP4 exported by Kiln from molten.frag" />
-              <figcaption>Exported by Kiln: molten.frag, 540×960 MP4</figcaption>
+              <video src="/media/haze.mp4" poster="/media/haze.jpg" autoPlay muted loop playsInline aria-label="The heat haze effect as a 540×960 MP4 exported by Kiln" />
+              <figcaption>Exported by Kiln: heat_haze.frag, 540×960 MP4</figcaption>
             </figure>
             <div data-reveal style={{ "--delay": "0.1s" } as React.CSSProperties}>
               <table className="firing">
@@ -174,6 +174,22 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="sec" aria-labelledby="shelf" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="sec-head" data-reveal>
+            <div>
+              <span className="temp" style={{ "--t": "#ff6f9b" } as React.CSSProperties}><b>Out</b> cooling on the shelf</span>
+              <h2 id="shelf">Six firings,<br />one editor</h2>
+            </div>
+            <p className="lede">
+              Every clip here was rendered by Kiln&apos;s own exporter, from shaders written for this page. Each one shows a different
+              dialect or feature, and the source is one click away.
+            </p>
+          </div>
+          <div data-reveal><Shelf /></div>
+        </div>
+      </section>
+
       <section className="sec" aria-labelledby="also" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="sec-head" data-reveal>
@@ -182,6 +198,10 @@ export default function Home() {
               The rest of the toolbox. <Link className="link-arrow" href="/features">Every feature →</Link>
             </p>
           </div>
+          <figure className="shot-wide" data-reveal style={{ margin: "0 0 48px" }}>
+            <img data-zoom src="/shots/overlay.webp" alt="Overlay mode: the vase shader's code floating over its full-screen output" width={1600} height={1055} loading="lazy" />
+            <figcaption>Overlay mode (F2): the code floats over the full-screen output. Esc goes back.</figcaption>
+          </figure>
           <dl className="spec" data-reveal>
             {ALSO.map(([t, d]) => (
               <div key={t}><dt>{t}</dt><dd>{d}</dd></div>

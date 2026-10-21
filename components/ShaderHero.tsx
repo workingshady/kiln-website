@@ -50,7 +50,8 @@ function highlight(line: string) {
   const parts: React.ReactNode[] = [];
   const ci = line.indexOf("//");
   const code = ci >= 0 ? line.slice(0, ci) : line;
-  code.split(/(\b[\w.]+\b)/).forEach((tok, i) => {
+  // Identifiers and numbers are separate tokens, so in iResolution.xy only the name is coloured.
+  code.split(/([A-Za-z_]\w*|\d+\.?\d*)/).forEach((tok, i) => {
     if (!tok) return;
     const cls = KEYWORDS.test(tok) ? "tk-k"
       : TYPES.test(tok) ? "tk-t"
@@ -132,7 +133,7 @@ export function ShaderHero() {
       draw(now);
       frames++;
       if (now - last > 1000) {
-        setStats(`${c.width}×${c.height} · ${Math.round((frames * 1000) / (now - last))} fps`);
+        setStats(`${Math.round((frames * 1000) / (now - last))} fps`);
         frames = 0;
         last = now;
       }
@@ -186,7 +187,7 @@ export function ShaderHero() {
         <span className="tab hide-sm">Pass</span>
         <span className="tab hide-sm">Shader</span>
         <span className="tab">molten.frag</span>
-        <span className="fps hide-sm">{stats.split(" · ")[1] ?? ""}</span>
+        <span className="fps hide-sm">{stats}</span>
         <span className="compile">Compile</span>
       </div>
       <div className="studio-body">
@@ -197,11 +198,11 @@ export function ShaderHero() {
         </pre>
         <div className="preview">
           {failed ? (
-            <img src="/shots/03-shadertoy.png" alt="" style={{ objectFit: "cover", flex: 1 }} />
+            <img src="/media/molten.jpg" alt="" style={{ objectFit: "cover", flex: 1, width: "100%" }} />
           ) : (
             <canvas ref={canvas} />
           )}
-          <span className="preview-tag">Image{stats ? ` · ${stats.split(" · ")[0]}` : ""}</span>
+          <span className="preview-tag">Image · live WebGL</span>
           <div className="uniforms">
             <div className="uni">
               <input id="u-heat" type="range" min={0} max={2} step={0.01} value={ui.heat} onChange={(e) => set("heat", +e.target.value, 1)} data-track="hero:slider-heat" />

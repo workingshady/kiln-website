@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import { Footer } from "@/components/Footer";
-import { HeatGauge, RevealObserver } from "@/components/Effects";
+import { HeatGauge, Lightbox, RevealObserver } from "@/components/Effects";
 import { Nav } from "@/components/Nav";
 import { Tracker } from "@/components/Tracker";
 import { site } from "@/lib/site";
@@ -36,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <HeatGauge />
         <RevealObserver />
+        <Lightbox />
         <Tracker />
       </body>
     </html>

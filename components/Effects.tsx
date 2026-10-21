@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /** Fades [data-reveal] elements in once as they enter the viewport. */
 export function RevealObserver() {
@@ -56,6 +56,33 @@ export function HeatGauge() {
     <div className="gauge" aria-hidden>
       <div className="gauge-tube"><div className="gauge-fill" ref={fill} /></div>
       <span className="gauge-read" ref={read}>20 °C</span>
+    </div>
+  );
+}
+
+/** Click any screenshot marked data-zoom to see it full size. Esc or a click closes it. */
+export function Lightbox() {
+  const [img, setImg] = useState<{ src: string; alt: string } | null>(null);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as Element | null)?.closest("img[data-zoom]") as HTMLImageElement | null;
+      if (el) setImg({ src: el.currentSrc || el.src, alt: el.alt });
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setImg(null);
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  if (!img) return null;
+  return (
+    <div className="zoom" role="dialog" aria-modal="true" aria-label={img.alt} onClick={() => setImg(null)}>
+      <img src={img.src} alt={img.alt} />
+      <span className="zoom-hint">Esc or click to close</span>
     </div>
   );
 }

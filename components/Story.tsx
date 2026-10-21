@@ -111,24 +111,31 @@ export function DialectSwap() {
 
 /* ---------- Stage 2: shape it (sticky screenshot tour) ---------- */
 
+// Real Kiln windows, captured from shaders in this repo's shaders/ folder.
 const TOUR = [
   {
-    img: "/shots/01-editor.png",
-    alt: "Kiln editing a GLSL ES video effect with the iPhone preset, a photo texture and live sliders",
+    img: "/shots/haze-iphone.webp",
+    alt: "Kiln at the iPhone preset: the heat haze effect over a dusk scene, its sliders, colour and toggle in the Uniforms panel",
     title: "See it at phone size, while you type",
     body: "Pick the iPhone or Android preset and the preview becomes 1080×1920 with a top-left UV origin, the same as a camera pipeline. Kiln recompiles 120 ms after your last keystroke, and an error never blanks the preview.",
   },
   {
-    img: "/shots/02-add-uniform.png",
-    alt: "The Add uniform dialog creating a colour control",
+    img: "/shots/glaze-controls.webp",
+    alt: "A crackle glaze shader whose comments became sliders, colour pickers and a toggle",
     title: "Comments turn into controls",
-    body: "Write // @slider 0..1 next to a uniform and you get a slider. @color, @toggle and @drag work the same way. Any control can follow the clock, loop 0..1, or play keyframes with easing on the timeline.",
+    body: "Write // @slider 2..16 next to a uniform and you get a slider. @color, @toggle and @drag work the same way. Any control can follow the clock, loop 0..1, or play keyframes with easing on the timeline.",
   },
   {
-    img: "/shots/03-shadertoy.png",
-    alt: "A Shadertoy shader with three annotated uniforms as sliders and a colour picker",
-    title: "Feed it real footage",
-    body: "Drop in images, video files, your camera, an audio track or the microphone. Video follows the timeline frame by frame, and audio arrives as a Shadertoy-style spectrum with bass, mid and high levels you can use directly.",
+    img: "/shots/embers-audio.webp",
+    alt: "An audio-reactive ember shader with a beat track as its texture and the Performance panel open",
+    title: "Feed it real footage, and sound",
+    body: "Drop in images, video files, your camera, an audio track or the microphone. Audio arrives as a Shadertoy-style spectrum, plus u_bass, u_mid and u_high you can use directly, here driving the sparks.",
+  },
+  {
+    img: "/shots/burn-transition.webp",
+    alt: "A burn transition halfway between two clips, with From and To picked in the Transition panel",
+    title: "Cut between two clips",
+    body: "Point From and To at any two textures and write a gl-transitions transition(). Scrub progress, play it, or keyframe it over the timeline.",
   },
 ];
 
@@ -153,13 +160,13 @@ export function StoryTour() {
             <span className="n">2.{i + 1}</span>
             <h3>{t.title}</h3>
             <p>{t.body}</p>
-            <img className="tour-mobile-img" src={t.img} alt={t.alt} loading="lazy" width={1600} height={960} />
+            <img data-zoom className="tour-mobile-img" src={t.img} alt={t.alt} loading="lazy" width={1600} height={1055} />
           </div>
         ))}
       </div>
       <div className="tour-frame">
         {TOUR.map((t, i) => (
-          <img key={t.img} src={t.img} alt={i === active ? t.alt : ""} data-active={i === active} width={1600} height={960} loading={i ? "lazy" : "eager"} />
+          <img data-zoom key={t.img} src={t.img} alt={i === active ? t.alt : ""} data-active={i === active} width={1600} height={1055} loading={i ? "lazy" : "eager"} />
         ))}
       </div>
     </div>
@@ -216,6 +223,54 @@ export function BatchDemo() {
           {state.s[i] === "rendering" && <i className="pbar" style={{ "--p": `${state.p}%` } as React.CSSProperties} />}
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ---------- The kiln shelf: real exports, one per dialect or feature ---------- */
+
+const SRC = "https://github.com/workingshady/kiln-website/blob/main/shaders/";
+const SHELF = [
+  { v: "molten", name: "Molten glass", tag: "Shadertoy · domain-warped fbm", src: "https://github.com/muhammadhassan2/Kiln/blob/main/examples/molten.frag" },
+  { v: "haze", name: "Heat haze", tag: "GLSL ES 1.00 · video effect", src: SRC + "heat_haze.frag" },
+  { v: "vase", name: "Thrown vase", tag: "Raymarched · @color glaze", src: SRC + "vase.frag" },
+  { v: "burn", name: "Kiln burn", tag: "gl-transition · two clips", src: SRC + "kiln_burn.glsl" },
+  { v: "embers", name: "Embers on the beat", tag: "Audio texture · u_bass", src: SRC + "ember_audio.frag" },
+  { v: "glaze", name: "Crackle glaze", tag: "Voronoi · six controls", src: SRC + "glaze.frag" },
+];
+
+export function Shelf() {
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const vids = [...root.current!.querySelectorAll("video")];
+    // Only play what's on screen; six videos at once would waste battery for nothing.
+    const io = new IntersectionObserver((es) =>
+      es.forEach((e) => {
+        const v = e.target as HTMLVideoElement;
+        if (e.isIntersecting) v.play().catch(() => {});
+        else v.pause();
+      }),
+    );
+    vids.forEach((v) => io.observe(v));
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div className="shelf" ref={root}>
+      <div className="shelf-row">
+        {SHELF.map((s) => (
+          <figure key={s.v} className="pot">
+            <video src={`/media/${s.v}.mp4`} poster={`/media/${s.v}.jpg`} muted loop playsInline preload="none" aria-label={`${s.name}, exported from Kiln`} />
+            <figcaption>
+              <strong>{s.name}</strong>
+              <span>{s.tag}</span>
+              <a href={s.src} target="_blank" rel="noopener" data-track={`shelf:${s.v}`}>source ↗</a>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
     </div>
   );
 }
