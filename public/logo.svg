@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9744d"/><stop offset="1" stop-color="#8e4229"/></linearGradient>
+    <radialGradient id="m" cx=".5" cy=".85" r=".9"><stop offset="0" stop-color="#fff0b8"/><stop offset=".45" stop-color="#ffc04d"/><stop offset="1" stop-color="#ff7a45"/></radialGradient>
+  </defs>
+  <path d="M8 56C8 32 18 16 32 16s24 16 24 40Z" fill="url(#b)"/>
+  <g stroke="#5a2418" stroke-width="1.3" opacity=".75"><path d="M14.5 30h35M10.7 39h42.6M9 48h46"/><path d="M26 16.8v13.2M38 16.8v13.2M20 30v9M32 30v9M44 30v9M15 39v9M49 39v9"/></g>
+  <path d="M22 56V44a10 10 0 0 1 20 0v12Z" fill="#3b1a14"/>
+  <path d="M24 56V44.5a8 8 0 0 1 16 0V56Z" fill="url(#m)"/>
+  <rect x="5" y="55" width="54" height="4" rx="1.5" fill="#3b1a14"/>
+  <rect x="29" y="8" width="6" height="6" fill="#ffc04d"/><rect x="22" y="3" width="4" height="4" fill="#ff6f9b"/><rect x="38" y="2" width="3.5" height="3.5" fill="#ffd66b"/>
+</svg>
