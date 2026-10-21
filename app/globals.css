@@ -580,3 +580,53 @@ img[data-zoom] { cursor: zoom-in; }
 .defs dt { color: var(--bone); font-weight: 600; }
 .defs dd { margin: 0; color: var(--ash); }
 @media (max-width: 700px) { .defs dl { grid-template-columns: 1fr; } .exclude { margin-left: 0; } }
+
+/* dashboard v3: sections, compact KPIs, one-line sessions */
+.dash-nav { position: sticky; top: 60px; z-index: 9; display: flex; gap: 4px; padding: 8px 0; background: var(--soot); border-bottom: 1px solid var(--line-soft); overflow-x: auto; scrollbar-width: none; }
+.dash-nav a { padding: 6px 12px; border-radius: 999px; color: var(--ash); text-decoration: none; font-size: 13px; white-space: nowrap; }
+.dash-nav a:hover { background: var(--clay-2); color: var(--bone); }
+.dash-sec { display: grid; gap: 20px; scroll-margin-top: 120px; }
+.dash-h { font: 800 30px/1 var(--font-display); text-transform: uppercase; color: var(--bone); margin: 18px 0 0; }
+.dash-h small { font: 13px var(--font-body); text-transform: none; color: var(--muted); margin-left: 10px; }
+.kpi-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.kpi-group .group-title { margin: 0 0 12px; }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
+.kpi { display: grid; gap: 4px; cursor: help; }
+.kpi .tile-v { font-size: 32px; }
+@media (max-width: 1100px) { .kpi-groups { grid-template-columns: minmax(0, 1fr); } .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.sess-list { padding: 0; overflow: hidden; }
+.sess-head, .sess > summary { display: grid; grid-template-columns: 110px 170px minmax(140px, 1.1fr) minmax(0, 2fr) 110px; gap: 14px; align-items: center; padding: 10px 16px; }
+.sess-head { font: 500 12px var(--font-mono); color: var(--muted); border-bottom: 1px solid var(--line); }
+.sess { border-bottom: 1px solid var(--line-soft); }
+.sess:last-child { border-bottom: 0; }
+.sess > summary { cursor: pointer; list-style: none; font-size: 13px; }
+.sess > summary::-webkit-details-marker { display: none; }
+.sess > summary:hover, .sess[open] > summary { background: var(--clay); }
+.sess-time { color: var(--ash); font-size: 12px; }
+.sess-who { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.sess-who a { color: var(--bone); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+.sess-from { display: grid; min-width: 0; }
+.sess-from b, .sess-from span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sess-from b { font-weight: 600; color: var(--bone); }
+.sess-from span { font-size: 12px; }
+.sess-path { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; min-width: 0; }
+.sess-path .mono { font-size: 12px; color: var(--ash); }
+.sess-dur { text-align: right; font: 12px var(--font-mono); color: var(--bone); }
+.sess-steps { margin: 0; padding: 6px 16px 4px 140px; display: flex; flex-wrap: wrap; gap: 6px; list-style: none; counter-reset: st; }
+.sess-steps li { counter-increment: st; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: var(--soot); border: 1px solid var(--line-soft); }
+.sess-steps li::before { content: counter(st) ". "; color: var(--muted); font: 11px var(--font-mono); }
+.sess-steps li.dl { border-color: rgba(255, 192, 77, 0.4); color: var(--flame); }
+.sess-steps li.dl::before { content: ""; }
+.sess-meta { margin: 6px 16px 14px 140px; font-size: 12px; }
+@media (max-width: 900px) {
+  .sess-head { display: none; }
+  .sess > summary { grid-template-columns: 1fr auto; grid-template-areas: "time dur" "who who" "from from" "path path"; gap: 4px; }
+  .sess-time { grid-area: time; } .sess-dur { grid-area: dur; } .sess-who { grid-area: who; } .sess-from { grid-area: from; } .sess-path { grid-area: path; }
+  .sess-steps, .sess-meta { padding-left: 16px; margin-left: 16px; }
+}
+.livebtn { font: 12px var(--font-mono); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; cursor: pointer; }
+.livebtn.on { color: var(--lime); border-color: rgba(198, 242, 78, 0.35); }
+.livebtn:hover { color: var(--bone); }
+@media (max-width: 700px) { .livebtn { display: none; } }

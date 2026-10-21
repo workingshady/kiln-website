@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AreaChart, ColumnChart, ExcludeMe, Heatmap, TimezoneSync } from "@/components/Charts";
+import { AreaChart, ColumnChart, ExcludeMe, Heatmap, LiveRefresh, TimezoneSync } from "@/components/Charts";
 import { LogoMark } from "@/components/Logo";
 import { isAdmin } from "@/lib/auth";
-import { FILTER_KEYS, type Filters, type Kpis, loadStats, RANGES, type RangeKey, type Stats, validTz } from "@/lib/stats";
+import { FILTER_KEYS, type Filters, type Kpis, loadStats, RANGES, type RangeKey, type Session, type Stats, validTz } from "@/lib/stats";
 
 export const metadata: Metadata = { title: "Dashboard", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -89,6 +89,59 @@ function Ranked({ title, rows, filterKey, cur, empty = "Nothing yet", unit = "vi
   );
 }
 
+/** Consecutive repeats of the same page become one step with a count: / / / becomes / ×3. */
+function steps(pages: string[]) {
+  const out: { path: string; n: number }[] = [];
+  for (const pg of pages) {
+    const last = out[out.length - 1];
+    if (last && last.path === pg) last.n++;
+    else out.push({ path: pg, n: 1 });
+  }
+  return out;
+}
+
+function counts(list: string[]) {
+  const m = new Map<string, number>();
+  for (const x of list) m.set(x, (m.get(x) ?? 0) + 1);
+  return [...m.entries()];
+}
+
+/** One line per session; the full path opens on click. */
+function SessionRow({ x, when, cur }: { x: Session; when: Intl.DateTimeFormat; cur: Params }) {
+  const exit = x.pages.at(-1) ?? x.landing;
+  const dls = counts(x.downloads);
+  const tag = x.firstVisit ? <span className="pill t-new">new</span>
+    : x.kind === "daily" ? <span className="pill" title="Storage blocked or an older row: identified for this day only">day id</span>
+    : <span className="pill">returning</span>;
+  return (
+    <details className="sess">
+      <summary>
+        <span className="mono sess-time">{when.format(x.start)}</span>
+        <span className="sess-who"><Link className="mono" href={href(cur, { visitor: x.visitor })}>{x.visitor.slice(0, 8)}</Link> {tag}</span>
+        <span className="sess-from">
+          <b>{x.source}{x.campaign ? ` / ${x.campaign}` : ""}</b>
+          <span className="muted">{[x.city ?? x.country, x.os, x.browser].filter(Boolean).join(" · ")}</span>
+        </span>
+        <span className="sess-path">
+          <span className="mono">{x.landing}</span>
+          {x.pages.length > 1 && <><span className="muted"> → </span><span className="mono">{exit}</span></>}
+          <span className="muted"> · {x.pages.length} {x.pages.length === 1 ? "page" : "pages"}</span>
+          {dls.map(([d, c]) => <span key={d} className="pill t-download">⬇ {d}{c > 1 ? ` ×${c}` : ""}</span>)}
+          {x.lead && <span className="pill t-click">✉ sign-up</span>}
+        </span>
+        <span className="r sess-dur">{dur(x.durationMs)}{!x.engaged && <span className="muted"> · bounced</span>}</span>
+      </summary>
+      <ol className="sess-steps">
+        {steps(x.pages).map((st, i) => (
+          <li key={i}><span className="mono">{st.path}</span>{st.n > 1 && <span className="muted"> ×{st.n}</span>}</li>
+        ))}
+        {dls.map(([d, c]) => <li key={"d" + d} className="dl">⬇ downloaded {d}{c > 1 ? ` (${c} clicks)` : ""}</li>)}
+      </ol>
+      <p className="sess-meta muted">{[x.device, x.os, x.browser, x.lang, [x.city, x.country].filter(Boolean).join(", ")].filter(Boolean).join(" · ")} · {dur(x.engagedMs)} visible time</p>
+    </details>
+  );
+}
+
 export default async function Admin({ searchParams }: { searchParams: Promise<Params> }) {
   if (!(await isAdmin())) redirect("/admin/login");
   const sp = await searchParams;
@@ -116,7 +169,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       <header className="admin-bar">
         <div className="wrap admin-bar-in">
           <Link href="/" className="brand"><LogoMark size={28} /><span>Kiln</span></Link>
-          <span className="live" title="Visitors with activity in the last 5 minutes"><i />{s.activeNow} active now</span>
+          <span className="live" title="Visitors with any page view, click or download in the last 5 minutes"><i />{s.activeNow} active now</span>
+          <LiveRefresh renderedAt={Date.now()} />
           <nav className="ranges" aria-label="Date range">
             {(Object.keys(RANGES) as RangeKey[]).map((r) => (
               <Link key={r} href={href(cur, { range: r })} aria-current={r === range ? "page" : undefined}>{r}</Link>
@@ -144,160 +198,167 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           </div>
         )}
 
-        {GROUPS.map((g) => (
-          <section key={g.title} aria-label={g.title}>
-            <h3 className="group-title">{g.title}</h3>
-            <div className="tiles">
-              {g.tiles.map((t) => (
-                <div key={t.k} className="tile" title={t.help}>
-                  <span className="tile-l">{t.label}</span>
-                  <span className="tile-v">{t.fmt(s.now[t.k])}</span>
-                  <Delta now={s.now[t.k]} prev={s.prev[t.k]} lowerIsBetter={t.lower} />
+        <nav className="dash-nav" aria-label="Sections">
+          {[["overview", "Overview"], ["acquisition", "Acquisition"], ["behaviour", "Behaviour"], ["audience", "Audience"], ["sessions", "Sessions"], ["signups", "Sign-ups"]].map(([id, t]) => (
+            <a key={id} href={`#${id}`}>{t}</a>
+          ))}
+        </nav>
+
+        <section id="overview" className="dash-sec">
+          <h2 className="dash-h">Overview</h2>
+          <div className="kpi-groups">
+            {GROUPS.map((g) => (
+              <div key={g.title} className="panel kpi-group">
+                <h3 className="group-title">{g.title}</h3>
+                <div className="kpis">
+                  {g.tiles.map((t) => (
+                    <div key={t.k} className="kpi" title={t.help}>
+                      <span className="tile-l">{t.label}</span>
+                      <span className="tile-v">{t.fmt(s.now[t.k])}</span>
+                      <Delta now={s.now[t.k]} prev={s.prev[t.k]} lowerIsBetter={t.lower} />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+          <div className="grid-2">
+            <div className="panel">
+              <h2>Unique visitors per {s.hourly ? "hour" : "day"}</h2>
+              <AreaChart unit="visitors" data={s.series.map((x) => ({ label: label(x.key), value: x.visitors }))} />
             </div>
-          </section>
-        ))}
+            <div className="panel">
+              <h2>Download clicks per {s.hourly ? "hour" : "day"}</h2>
+              <ColumnChart unit="downloads" data={s.series.map((x) => ({ label: label(x.key), value: x.downloads }))} />
+            </div>
+          </div>
+          <div className="grid-2">
+            <div className="panel">
+              <h2>Funnel <small>visitors</small></h2>
+              <ol className="funnel">
+                {s.funnel.map((f, i) => {
+                  return (
+                    <li key={f.name}>
+                      <div className="funnel-bar" style={{ width: `${Math.max((f.value / funnelTop) * 100, f.value ? 2 : 0)}%` }} />
+                      <span className="funnel-name">{f.name}</span>
+                      <span className="num">{n(f.value)}</span>
+                      <span className="funnel-step">{i === 0 ? "everyone in this period" : `${pct(f.value / funnelTop)} of visitors`}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+              <p className="muted small">Download buttons are also on the home page, so people can download without opening /download. Release sign-ups: {n(s.now.leads)} ({pct(s.now.leadRate)} of visitors).</p>
+            </div>
+            <Ranked cur={cur} title="Downloads by platform" rows={s.platforms} unit="clicks" />
+          </div>
+        </section>
 
-        <div className="grid-2">
+        <section id="acquisition" className="dash-sec">
+          <h2 className="dash-h">Acquisition <small>where visitors come from</small></h2>
           <div className="panel">
-            <h2>Unique visitors per {s.hourly ? "hour" : "day"}</h2>
-            <AreaChart unit="visitors" data={s.series.map((x) => ({ label: label(x.key), value: x.visitors }))} />
+            <h2>Traffic sources <small>click one to filter</small></h2>
+            {s.sources.length === 0 ? <p className="muted">Nothing yet</p> : (
+              <div className="table-scroll">
+                <table className="events data">
+                  <thead><tr><th>Source</th><th className="r">Visitors</th><th className="r">Sessions</th><th className="r">Engaged</th><th className="r">Downloaded</th><th className="r">Conversion</th></tr></thead>
+                  <tbody>
+                    {s.sources.map((r) => (
+                      <tr key={r.name}>
+                        <td><Link href={href(cur, { source: r.name })}>{r.name}</Link></td>
+                        <td className="r">{n(r.visitors)}</td><td className="r">{n(r.sessions)}</td>
+                        <td className="r">{pct(r.engagement)}</td><td className="r">{n(r.downloaders)}</td><td className="r">{pct(r.conversion)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-          <div className="panel">
-            <h2>Download clicks per {s.hourly ? "hour" : "day"}</h2>
-            <ColumnChart unit="downloads" data={s.series.map((x) => ({ label: label(x.key), value: x.downloads }))} />
-          </div>
-        </div>
 
-        <div className="grid-2">
-          <div className="panel">
-            <h2>Funnel <small>visitors</small></h2>
-            <ol className="funnel">
-              {s.funnel.map((f, i) => {
-                return (
-                  <li key={f.name}>
-                    <div className="funnel-bar" style={{ width: `${Math.max((f.value / funnelTop) * 100, f.value ? 2 : 0)}%` }} />
-                    <span className="funnel-name">{f.name}</span>
-                    <span className="num">{n(f.value)}</span>
-                    <span className="funnel-step">{i === 0 ? "everyone in this period" : `${pct(f.value / funnelTop)} of visitors`}</span>
-                  </li>
-                );
-              })}
-            </ol>
-            <p className="muted small">Download buttons are also on the home page, so people can download without opening /download. Release sign-ups: {n(s.now.leads)} ({pct(s.now.leadRate)} of visitors).</p>
+          <div className="grid-2">
+            <Ranked cur={cur} title="Campaigns" rows={s.campaigns} empty="Tag ad links with ?utm_source=…&utm_campaign=…" />
+            <Ranked cur={cur} title="Languages" rows={s.langs} empty="Shown after migration 002" />
           </div>
-          <div className="panel">
-            <h2>When visitors come <small>sessions, {tz}</small></h2>
-            <Heatmap grid={s.heat} days={s.heatDays} />
-          </div>
-        </div>
+        </section>
 
-        <div className="panel">
-          <h2>Traffic sources <small>click one to filter</small></h2>
-          {s.sources.length === 0 ? <p className="muted">Nothing yet</p> : (
-            <div className="table-scroll">
-              <table className="events data">
-                <thead><tr><th>Source</th><th className="r">Visitors</th><th className="r">Sessions</th><th className="r">Engaged</th><th className="r">Downloaded</th><th className="r">Conversion</th></tr></thead>
-                <tbody>
-                  {s.sources.map((r) => (
-                    <tr key={r.name}>
-                      <td><Link href={href(cur, { source: r.name })}>{r.name}</Link></td>
-                      <td className="r">{n(r.visitors)}</td><td className="r">{n(r.sessions)}</td>
-                      <td className="r">{pct(r.engagement)}</td><td className="r">{n(r.downloaders)}</td><td className="r">{pct(r.conversion)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <section id="behaviour" className="dash-sec">
+          <h2 className="dash-h">Behaviour <small>what they do</small></h2>
+          <div className="panel">
+            <h2>Pages <small>click one to see sessions that viewed it</small></h2>
+            {s.pages.length === 0 ? <p className="muted">Nothing yet</p> : (
+              <div className="table-scroll">
+                <table className="events data">
+                  <thead><tr><th>Page</th><th className="r">Views</th><th className="r">Visitors</th><th className="r">Entrances</th><th className="r">Avg. visible time</th></tr></thead>
+                  <tbody>
+                    {s.pages.map((r) => (
+                      <tr key={r.name}>
+                        <td className="mono"><Link href={href(cur, { page: r.name })}>{r.name}</Link></td>
+                        <td className="r">{n(r.views)}</td><td className="r">{n(r.visitors)}</td><td className="r">{n(r.entries)}</td><td className="r">{r.avgMs ? dur(r.avgMs) : "–"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="grid-3">
+            <Ranked cur={cur} title="Clicks" rows={s.clicks} unit="visitors" />
+            <Ranked cur={cur} title="Last page before download" rows={s.downloadFrom} unit="sessions" />
+            <div className="panel">
+              <h2>When visitors come <small>sessions, {tz}</small></h2>
+              <Heatmap grid={s.heat} days={s.heatDays} />
+            </div>
+          </div>
+        </section>
+
+        <section id="audience" className="dash-sec">
+          <h2 className="dash-h">Audience <small>who they are</small></h2>
+          <div className="grid-3">
+            <Ranked cur={cur} title="Countries" rows={s.countries} filterKey="country" empty="Countries appear on the Vercel deployment" />
+            <Ranked cur={cur} title="Cities" rows={s.cities} empty="Cities appear on the Vercel deployment" />
+            <Ranked cur={cur} title="Devices" rows={s.devices} filterKey="device" />
+            <Ranked cur={cur} title="Operating systems" rows={s.os} filterKey="os" />
+            <Ranked cur={cur} title="Browsers" rows={s.browsers} filterKey="browser" />
+          </div>
+        </section>
+
+        <section id="sessions" className="dash-sec">
+          <h2 className="dash-h">Sessions <small>latest {s.sessions.length} · open one to see its path · click a visitor id to follow them</small></h2>
+          {s.sessions.length === 0 ? <div className="panel"><p className="muted">No sessions in this range.</p></div> : (
+            <div className="panel sess-list">
+              <div className="sess-head" aria-hidden><span>Started</span><span>Visitor</span><span>From</span><span>Path</span><span className="r">Time</span></div>
+              {s.sessions.map((x) => <SessionRow key={x.visitor + x.start} x={x} when={when} cur={cur} />)}
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="panel">
-          <h2>Pages <small>click one to see sessions that viewed it</small></h2>
-          {s.pages.length === 0 ? <p className="muted">Nothing yet</p> : (
-            <div className="table-scroll">
-              <table className="events data">
-                <thead><tr><th>Page</th><th className="r">Views</th><th className="r">Visitors</th><th className="r">Entrances</th><th className="r">Avg. visible time</th></tr></thead>
-                <tbody>
-                  {s.pages.map((r) => (
-                    <tr key={r.name}>
-                      <td className="mono"><Link href={href(cur, { page: r.name })}>{r.name}</Link></td>
-                      <td className="r">{n(r.views)}</td><td className="r">{n(r.visitors)}</td><td className="r">{n(r.entries)}</td><td className="r">{r.avgMs ? dur(r.avgMs) : "–"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        <section id="signups" className="dash-sec">
+          <h2 className="dash-h">Sign-ups</h2>
+          <div className="panel">
+            <h2>Release sign-ups <small>emails left on the download page</small></h2>
+            {!s.quality.leadsTable ? <p className="muted">Run migration 002 to enable sign-ups.</p> : s.leads.length === 0 ? <p className="muted">No sign-ups in this range.</p> : (
+              <div className="table-scroll">
+                <table className="events">
+                  <thead><tr><th>When</th><th>Email</th><th>Platform</th><th>Source</th><th>Country</th><th>Visitor</th></tr></thead>
+                  <tbody>
+                    {s.leads.map((l) => (
+                      <tr key={l.email}>
+                        <td className="mono">{when.format(Date.parse(l.created_at))}</td>
+                        <td><a href={`mailto:${l.email}`}>{l.email}</a></td>
+                        <td>{l.platform}</td>
+                        <td>{l.utm_source ?? "–"}{l.utm_campaign ? ` / ${l.utm_campaign}` : ""}</td>
+                        <td>{l.country ?? "–"}</td>
+                        <td>{l.visitor ? <Link className="mono" href={href(cur, { visitor: l.visitor })}>{l.visitor.slice(0, 8)}</Link> : "–"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
-        <div className="grid-3">
-          <Ranked cur={cur} title="Downloads by platform" rows={s.platforms} unit="clicks" />
-          <Ranked cur={cur} title="Last page before download" rows={s.downloadFrom} unit="sessions" />
-          <Ranked cur={cur} title="Clicks" rows={s.clicks} unit="visitors" />
-          <Ranked cur={cur} title="Campaigns" rows={s.campaigns} empty="Tag ad links with ?utm_source=…&utm_campaign=…" />
-          <Ranked cur={cur} title="Countries" rows={s.countries} filterKey="country" empty="Countries appear on the Vercel deployment" />
-          <Ranked cur={cur} title="Cities" rows={s.cities} empty="Cities appear on the Vercel deployment" />
-          <Ranked cur={cur} title="Devices" rows={s.devices} filterKey="device" />
-          <Ranked cur={cur} title="Operating systems" rows={s.os} filterKey="os" />
-          <Ranked cur={cur} title="Browsers" rows={s.browsers} filterKey="browser" />
-          <Ranked cur={cur} title="Languages" rows={s.langs} />
-        </div>
-
-        <div className="panel">
-          <h2>Latest sessions <small>click a visitor to follow them</small></h2>
-          {s.sessions.length === 0 ? <p className="muted">No sessions in this range.</p> : (
-            <div className="table-scroll">
-              <table className="events">
-                <thead><tr><th>Started</th><th>Visitor</th><th>Source</th><th>Where</th><th>Device</th><th>Journey</th><th className="r">Time</th></tr></thead>
-                <tbody>
-                  {s.sessions.map((x) => (
-                    <tr key={x.visitor + x.start}>
-                      <td className="mono">{when.format(x.start)}</td>
-                      <td>
-                        <Link className="mono" href={href(cur, { visitor: x.visitor })}>{x.visitor.slice(0, 8)}</Link>{" "}
-                        {x.firstVisit ? <span className="pill t-new">new</span> : x.kind === "daily" ? <span className="pill" title="Storage blocked or an older row: identified for this day only">day id</span> : <span className="pill">returning</span>}
-                      </td>
-                      <td>{x.source}{x.campaign ? ` / ${x.campaign}` : ""}</td>
-                      <td>{[x.city, x.country].filter(Boolean).join(", ")}</td>
-                      <td className="muted">{[x.device, x.os, x.browser].filter(Boolean).join(" · ")}</td>
-                      <td className="journey">
-                        {x.pages.map((pg, i) => <span key={i} className="mono">{pg}</span>)}
-                        {x.downloads.map((d, i) => <span key={`d${i}`} className="pill t-download">⬇ {d}</span>)}
-                        {x.lead && <span className="pill t-click">✉ sign-up</span>}
-                      </td>
-                      <td className="r">{dur(x.durationMs)}{x.engaged ? "" : <span className="muted"> · bounced</span>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="panel">
-          <h2>Release sign-ups</h2>
-          {!s.quality.leadsTable ? <p className="muted">Run migration 002 to enable sign-ups.</p> : s.leads.length === 0 ? <p className="muted">No sign-ups in this range.</p> : (
-            <div className="table-scroll">
-              <table className="events">
-                <thead><tr><th>When</th><th>Email</th><th>Platform</th><th>Source</th><th>Country</th><th>Visitor</th></tr></thead>
-                <tbody>
-                  {s.leads.map((l) => (
-                    <tr key={l.email}>
-                      <td className="mono">{when.format(Date.parse(l.created_at))}</td>
-                      <td><a href={`mailto:${l.email}`}>{l.email}</a></td>
-                      <td>{l.platform}</td>
-                      <td>{l.utm_source ?? "–"}{l.utm_campaign ? ` / ${l.utm_campaign}` : ""}</td>
-                      <td>{l.country ?? "–"}</td>
-                      <td>{l.visitor ? <Link className="mono" href={href(cur, { visitor: l.visitor })}>{l.visitor.slice(0, 8)}</Link> : "–"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        </section>
 
         <details className="panel defs">
           <summary>How these numbers are counted</summary>

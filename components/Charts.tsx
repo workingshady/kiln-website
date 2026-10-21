@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type Point = { label: string; value: number };
@@ -202,5 +203,43 @@ export function ExcludeMe() {
       />
       Don&apos;t count my visits from this browser
     </label>
+  );
+}
+
+/** Re-fetches the dashboard every 30 s while the tab is visible, so numbers and "active now" stay current. */
+export function LiveRefresh({ renderedAt }: { renderedAt: number }) {
+  const router = useRouter();
+  const [live, setLive] = useState(true);
+  const [ago, setAgo] = useState(0);
+
+  useEffect(() => {
+    try { setLive(localStorage.getItem("kiln_live") !== "0"); } catch {}
+  }, []);
+  useEffect(() => {
+    const tick = setInterval(() => setAgo(Math.max(0, Math.round((Date.now() - renderedAt) / 1000))), 1000);
+    return () => clearInterval(tick);
+  }, [renderedAt]);
+  useEffect(() => {
+    if (!live) return;
+    const refresh = () => document.visibilityState === "visible" && router.refresh();
+    const id = setInterval(refresh, 30_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", refresh); };
+  }, [live, router]);
+
+  return (
+    <button
+      type="button"
+      className={`livebtn${live ? " on" : ""}`}
+      onClick={() => {
+        const next = !live;
+        setLive(next);
+        try { localStorage.setItem("kiln_live", next ? "1" : "0"); } catch {}
+        if (next) router.refresh();
+      }}
+      title={live ? "Refreshing every 30 s. Click to pause." : "Paused. Click to refresh every 30 s."}
+    >
+      {live ? "Live" : "Paused"} · updated {ago < 60 ? `${ago}s` : `${Math.floor(ago / 60)}m`} ago
+    </button>
   );
 }
