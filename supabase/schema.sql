@@ -26,3 +26,5 @@ create index if not exists events_created_at_idx on public.events (created_at de
 create index if not exists events_type_created_idx on public.events (type, created_at desc);
 
 alter table public.events enable row level security;
+
+-- Later changes live in supabase/migrations/ (run them in order after this file).

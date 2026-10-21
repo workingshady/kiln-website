@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DetectedNote, DownloadButton, PlatformCards } from "@/components/Download";
+import { LeadForm } from "@/components/LeadForm";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function DownloadPage() {
             </p>
             <div className="dl-detected"><DownloadButton from="download-hero" /></div>
             <DetectedNote />
+            <LeadForm from="/download" />
           </div>
           <img className="dl-icon" src="/app-icon.png" alt="The Kiln app icon: a brick kiln glowing from inside" width={1024} height={1024} />
         </div>

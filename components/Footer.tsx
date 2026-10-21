@@ -47,7 +47,7 @@ export function Footer() {
         </div>
         <div className="foot-base">
           <span>© {new Date().getFullYear()} Kiln contributors</span>
-          <span>No cookies. Visits are counted anonymously.</span>
+          <span>No cookies. An anonymous ID in your browser counts return visits.</span>
         </div>
       </div>
     </footer>

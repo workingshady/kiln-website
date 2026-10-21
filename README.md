@@ -39,13 +39,35 @@ Click any app screenshot on the site to see it full size.
 
 ![The admin sign-in page](docs/screenshots/admin-login.webp)
 
-- `POST /api/track` records page views, time on page, and clicks on any element with `data-track="name"`, plus outbound links.
+**What's recorded.**
+- `POST /api/track` records page views, visible time on page, and clicks on any element with `data-track="name"` or an outbound link.
 - `GET /api/download/:platform` (`windows`, `mac`, `mac-intel`, `source`) records the download, then redirects to the file.
-- No cookies and no stored IPs. A visitor is a salted SHA-256 of IP + user agent + date, so the ID changes every day. Country and city come from Vercel's geo headers. Bots and headless browsers are filtered by user agent.
-- Ad links can carry `?utm_source=…&utm_campaign=…` (or `?ref=…`); they show up under Campaigns.
-- `/admin` shows visitors, page views, downloads, the share of visitors who downloaded, time on page and clicks, each compared with the previous period. Below that: visitors and downloads per day, downloads by platform and by page, top clicks, pages, referrers, campaigns, countries, cities, OS, browser, device, and the latest events, for 7, 30 or 90 days.
+- `POST /api/lead` stores emails from the "tell me when it's released" form in `leads`.
 
-The table is in [`supabase/schema.sql`](supabase/schema.sql). Row level security is on with no policies, so only the server (service role key) can read or write it.
+**Who counts as what** (GA4's rules):
+
+| Term | Definition |
+|---|---|
+| Visitor | One browser, identified by an anonymous random id in `localStorage`. No cookies, no stored IPs. If storage is blocked, a salted IP + browser hash that rotates daily is used instead. |
+| Session | Activity with no gap over 30 minutes. Rebuilt from timestamps, so it continues across tabs and midnight. |
+| Engaged session | 10 s or more of visible time, 2 or more pages, a download, or a sign-up. Bounce rate is the rest. |
+| Conversion | Visitors with at least one download ÷ unique visitors. |
+
+**The dashboard** at `/admin`:
+- **Header and ranges:** a live "active now" count, and 24h (hourly), 7d, 30d or 90d (daily), shown in your timezone.
+- **Filters:** source, page, country, device, OS, browser, or one visitor. Click any row to apply one.
+- **KPIs:** audience, engagement and conversion, each compared with the previous period.
+- **Charts and tables:**
+  - visitors and download clicks over time
+  - a funnel and a weekday × hour heatmap
+  - source quality and pages (views, visitors, entrances, visible time)
+  - platforms, clicks, campaigns, geography and tech
+  - a session-by-session journey log, and the sign-ups list
+- **Exclusion:** "Don't count my visits" keeps your own browsing out of the numbers.
+
+Bots and headless browsers are filtered by user agent. Ad links can carry `?utm_source=…&utm_campaign=…` (or `?ref=…`).
+
+Tables: [`supabase/schema.sql`](supabase/schema.sql), then [`supabase/migrations/`](supabase/migrations) in order. Row level security is on with no policies, so only the server (service role key) can read or write them.
 
 ## Where the pictures come from
 
@@ -82,7 +104,7 @@ See [`.env.example`](.env.example).
 
 ## Deploy
 
-The project is connected to Vercel, so every push to `main` deploys to production. To set it up somewhere new: import the repo on Vercel (Next.js preset, root `./`), add the variables above, run `supabase/schema.sql` once in the Supabase SQL editor, and deploy.
+The project is connected to Vercel, so every push to `main` deploys to production. To set it up somewhere new: import the repo on Vercel (Next.js preset, root `./`), add the variables above, run `supabase/schema.sql` and then each file in `supabase/migrations/` in the Supabase SQL editor, and deploy.
 
 ## Design
 
