@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Big_Shoulders, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { Footer } from "@/components/Footer";
 import { HeatGauge, RevealObserver } from "@/components/Effects";
 import { Nav } from "@/components/Nav";
@@ -7,7 +8,8 @@ import { Tracker } from "@/components/Tracker";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-const display = Big_Shoulders({ subsets: ["latin"], weight: ["700", "800"], variable: "--f-display" });
+// Self-hosted: next/font/google can't resolve Big Shoulders' files on Vercel. Variable font, Latin subset.
+const display = localFont({ src: "./fonts/BigShoulders-latin.woff2", weight: "700 800", variable: "--f-display", display: "swap" });
 const body = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--f-body" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--f-mono" });
 
